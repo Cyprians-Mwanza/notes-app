@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'services/local/hive_helper.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/note_cubit.dart';
-import 'screens/notes_page.dart';
-import 'screens/login_page.dart';
-import 'services/local/prefs_helper.dart';
+import 'services/local/hive_helper.dart';
+import 'app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await HiveHelper.init();
-  final loggedIn = await PrefsHelper.isLoggedIn();
-
-  runApp(MyApp(isLoggedIn: loggedIn));
+  await HiveHelper().init();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-  const MyApp({super.key, required this.isLoggedIn});
+  final AppRouter _appRouter = AppRouter();
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +22,10 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => NoteCubit()),
       ],
       child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: isLoggedIn ? const NotesPage() : const LoginPage(),
+        title: 'Secure Notes',
+        theme: ThemeData(primarySwatch: Colors.indigo),
+        onGenerateRoute: _appRouter.onGenerateRoute,
+        initialRoute: '/login',
       ),
     );
   }

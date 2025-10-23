@@ -1,20 +1,15 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PrefsHelper {
-  static const _keyIsLoggedIn = 'isLoggedIn';
+  static const _keyLoggedIn = 'loggedIn';
 
-  static Future<void> setLoggedIn(bool value) async {
+  Future<void> setLoggedIn(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyIsLoggedIn, value);
+    await prefs.setBool(_keyLoggedIn, value);
   }
 
-  static Future<bool> isLoggedIn() async {
+  Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyIsLoggedIn) ?? false;
-  }
-
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    return prefs.getBool(_keyLoggedIn) ?? false;
   }
 }

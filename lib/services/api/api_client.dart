@@ -1,29 +1,45 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-import '../../models/note.dart';
-import '../../models/user.dart';
+import 'package:notes_app/models/note.dart';
+import 'package:notes_app/models/user.dart';
 
 part 'api_client.g.dart';
 
-@RestApi(baseUrl: "https://yourapi.com/api")
+@RestApi(baseUrl: "https://jsonplaceholder.typicode.com")
 abstract class ApiClient {
   factory ApiClient(Dio dio, {String baseUrl}) = _ApiClient;
 
-  @POST("/signup")
-  Future<User> signup(@Body() Map<String, dynamic> body);
-
+  // Auth endpoints (using HttpResponse to access metadata)
   @POST("/login")
-  Future<User> login(@Body() Map<String, dynamic> body);
+  Future<HttpResponse<User>> login(@Body() Map<String, dynamic> data);
 
+  @POST("/signup")
+  Future<HttpResponse<User>> signup(@Body() Map<String, dynamic> data);
+
+  // Notes endpoints
   @GET("/notes")
-  Future<List<Note>> getNotes();
+  Future<HttpResponse<List<Note>>> getNotes();
 
   @POST("/notes")
-  Future<Note> addNote(@Body() Note note);
+  Future<HttpResponse<Note>> createNote(@Body() Map<String, dynamic> data);
 
   @PUT("/notes/{id}")
-  Future<Note> updateNote(@Path("id") int id, @Body() Note note);
+  Future<HttpResponse<Note>> updateNote(
+      @Path("id") String id,
+      @Body() Map<String, dynamic> data,
+      );
 
   @DELETE("/notes/{id}")
-  Future<void> deleteNoteById(@Path("id") int id);
+  Future<HttpResponse<void>> deleteNote(@Path("id") String id);
+}
+
+Dio createDioClient() {
+  final dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 15),
+    headers: {"Content-Type": "application/json"},
+  ));
+
+  dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+  return dio;
 }
