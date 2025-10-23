@@ -4,7 +4,9 @@ import '../../../models/note.dart';
 
 part 'api_client.g.dart';
 
+// Try a different API if JSONPlaceholder has issues
 @RestApi(baseUrl: "https://jsonplaceholder.typicode.com/")
+// @RestApi(baseUrl: "https://api.npoint.io/") // Alternative API
 abstract class ApiClient {
   factory ApiClient(Dio dio, {String baseUrl}) = _ApiClient;
 

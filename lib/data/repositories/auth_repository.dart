@@ -9,24 +9,26 @@ class AuthRepository implements AuthRepositoryInterface {
       print('AuthRepository - Login attempt with: $email');
 
       // Mock authentication - simulate API call delay
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 1));
 
-      // Simple validation for demo
+      // Simple validation
       if (email.isEmpty || password.isEmpty) {
         throw Exception('Email and password are required');
       }
 
-      // For demo purposes, we'll accept any valid email and password
-      // In a real app, you would verify against a database/API
-      if (!email.contains('@') || password.length < 6) {
-        throw Exception('Invalid email or password');
+      if (!email.contains('@')) {
+        throw Exception('Please enter a valid email');
       }
 
-      // Mock successful login
+      if (password.length < 3) {
+        throw Exception('Password must be at least 3 characters');
+      }
+
+      // Create user with provided email
       final user = UserEntity(
         id: DateTime.now().millisecondsSinceEpoch,
         email: email,
-        name: 'User ${email.split('@')[0]}',
+        name: _getNameFromEmail(email),
         token: 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}',
       );
 
@@ -46,37 +48,13 @@ class AuthRepository implements AuthRepositoryInterface {
     }
   }
 
-  @override
-  Future<UserEntity> register(String email, String password, String name) async {
-    try {
-      print('AuthRepository - Register attempt with: $email, $name');
-
-      // Mock registration
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Simple validation
-      if (email.isEmpty || password.isEmpty || name.isEmpty) {
-        throw Exception('All fields are required');
-      }
-
-      if (password.length < 6) {
-        throw Exception('Password must be at least 6 characters');
-      }
-
-      final user = UserEntity(
-        id: DateTime.now().millisecondsSinceEpoch,
-        email: email,
-        name: name,
-        token: '', // Empty token since we're not logging in
-      );
-
-      print('AuthRepository - Registration successful, but NOT saving user data');
-
-      return user;
-    } catch (e) {
-      print('AuthRepository - Registration error: $e');
-      rethrow;
-    }
+  String _getNameFromEmail(String email) {
+    final namePart = email.split('@').first;
+    // Capitalize first letter of each word
+    return namePart
+        .split('.')
+        .map((part) => part[0].toUpperCase() + part.substring(1))
+        .join(' ');
   }
 
   @override

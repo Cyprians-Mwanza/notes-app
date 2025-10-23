@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/utils/date_utils.dart' as date_utils;
 import '../../domain/entities/note_entity.dart';
 

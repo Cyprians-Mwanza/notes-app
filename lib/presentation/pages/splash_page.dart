@@ -20,7 +20,7 @@ class SplashPage extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (_) => const NotesPage()),
           );
-        } else if (state is AuthUnauthenticated || state is AuthRegistrationSuccess) {
+        } else if (state is AuthUnauthenticated) {
           print('Navigating to LoginPage');
           Navigator.pushReplacement(
             context,
@@ -37,7 +37,7 @@ class SplashPage extends StatelessWidget {
                 const CircularProgressIndicator(),
                 const SizedBox(height: 20),
                 Text(
-                  'Improved Notes App',
+                  'My Notes App',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 10),
