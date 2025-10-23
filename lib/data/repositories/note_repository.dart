@@ -1,6 +1,5 @@
-import 'package:dio/dio.dart';
-
 import '../ remote/api/retrofit/api_client.dart';
+import '../ remote/models/api_note.dart';
 import '../../domain/entities/note_entity.dart';
 import '../../domain/repositories/note_repository_interface.dart';
 import '../local/hive/hive_helper.dart';
@@ -10,98 +9,57 @@ class NoteRepository implements NoteRepositoryInterface {
 
   NoteRepository({required this.apiClient});
 
-  // Mock data as fallback when API fails
-  List<NoteEntity> getMockNotes() {
-    final now = DateTime.now();
-    return [
-      NoteEntity(
-        id: 1,
-        title: 'Welcome to Notes App',
-        body: 'This is your first note. You can edit or delete it, or create new ones using the + button.',
-        createdAt: now,
-        updatedAt: now,
-        isSynced: false,
-      ),
-      NoteEntity(
-        id: 2,
-        title: 'How to use this app',
-        body: '• Tap + to create new notes\n• Tap on a note to view details\n• Swipe or use delete icon to remove notes\n• Your notes are saved locally on your device',
-        createdAt: now,
-        updatedAt: now,
-        isSynced: false,
-      ),
-      NoteEntity(
-        id: 3,
-        title: 'Offline First',
-        body: 'This app works offline! Your notes are stored locally and will sync with the cloud when possible.',
-        createdAt: now,
-        updatedAt: now,
-        isSynced: false,
-      ),
-    ];
-  }
-
   @override
   Future<List<NoteEntity>> getNotes() async {
     try {
       print('NoteRepository - Getting notes...');
 
-      // First try to get from local storage
+      // Always try local storage first (offline-first approach)
       final localNotes = HiveHelper.getAllNotes();
       print('NoteRepository - Found ${localNotes.length} local notes');
 
-      if (localNotes.isEmpty) {
-        print('NoteRepository - No local notes, fetching from API...');
-        // If no local notes, fetch from API
-        try {
-          final apiNotes = await apiClient.getNotes();
-          print('NoteRepository - Fetched ${apiNotes.length} notes from API');
+      // If we have local notes, return them immediately
+      if (localNotes.isNotEmpty) {
+        final entities = localNotes.map((note) => NoteEntity.fromModel(note)).toList();
+        print('NoteRepository - Returning ${entities.length} notes from local storage');
+        return entities;
+      }
 
-          // Convert API notes to our Note model and add timestamps
-          final notes = apiNotes.map((apiNote) {
-            final now = DateTime.now();
-            // Create a unique ID for local storage since API IDs might conflict
-            final localId = DateTime.now().millisecondsSinceEpoch + (apiNote.id ?? 0);
+      // Only try API if no local notes exist
+      print('NoteRepository - No local notes, attempting API fetch...');
+      try {
+        final apiNotes = await apiClient.getNotes();
+        print('NoteRepository - Successfully fetched ${apiNotes.length} notes from API');
 
-            return NoteEntity(
-              id: localId,
-              title: apiNote.title ?? 'No Title',
-              body: apiNote.body ?? 'No Content',
-              createdAt: now,
-              updatedAt: now,
-              isSynced: true,
-            );
-          }).toList();
-
-          // Save to local storage
-          await HiveHelper.saveAllNotes(notes.map((e) => e.toModel()).toList());
-          await HiveHelper.setLastSyncTime(DateTime.now());
-          print('NoteRepository - Saved ${notes.length} notes to local storage');
-
-          return notes;
-        } catch (e) {
-          print('NoteRepository - API fetch failed: $e');
-
-          // If API fails, use mock data for first-time users
-          print('NoteRepository - Using mock data as fallback');
-          final mockNotes = getMockNotes();
-          await HiveHelper.saveAllNotes(mockNotes.map((e) => e.toModel()).toList());
-          return mockNotes;
+        if (apiNotes.isEmpty) {
+          print('NoteRepository - API returned empty list');
+          return [];
         }
-      }
 
-      // Return local notes mapped to entities
-      final entities = localNotes.map((note) => NoteEntity.fromModel(note)).toList();
-      print('NoteRepository - Returning ${entities.length} notes from local storage');
-      return entities;
-    } catch (e) {
-      print('NoteRepository - Error getting notes: $e');
-      // Fallback to local storage if any error occurs
-      final localNotes = HiveHelper.getAllNotes();
-      if (localNotes.isEmpty) {
-        // If even local storage is empty, return mock data
-        return getMockNotes();
+        // Convert API notes to our Note model
+        final notes = apiNotes.map((apiNote) {
+          return NoteEntity(
+            id: apiNote.id?.toString(), // Convert API int id to String
+            title: apiNote.title ?? 'No Title',
+            body: apiNote.body ?? 'No Content',
+          );
+        }).toList();
+
+        // Save to local storage for future use
+        await HiveHelper.saveAllNotes(notes.map((e) => e.toModel()).toList());
+        print('NoteRepository - Saved ${notes.length} notes to local storage');
+
+        return notes;
+      } catch (e) {
+        print('NoteRepository - API fetch failed: $e');
+        // API failed, but that's OK - we'll work with empty local storage
+        // User can create their own notes
+        return [];
       }
+    } catch (e) {
+      print('NoteRepository - Unexpected error getting notes: $e');
+      // Final fallback - return whatever is in local storage
+      final localNotes = HiveHelper.getAllNotes();
       return localNotes.map((note) => NoteEntity.fromModel(note)).toList();
     }
   }
@@ -111,33 +69,49 @@ class NoteRepository implements NoteRepositoryInterface {
     try {
       print('NoteRepository - Creating note: ${note.title}');
 
-      // Save locally first
+      // Generate a unique ID for the new note
       final newNote = note.copyWith(
-        id: DateTime.now().millisecondsSinceEpoch,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
       );
 
+      // Save to local storage immediately
       await HiveHelper.saveNote(newNote.toModel());
       print('NoteRepository - Note saved locally with ID: ${newNote.id}');
 
-      // Try to sync with API (but don't fail if API is unavailable)
-      try {
-        final apiNote = await apiClient.createNote(newNote.toModel());
-        final syncedNote = newNote.copyWith(
-          id: apiNote.id ?? newNote.id,
-          isSynced: true,
-        );
-        await HiveHelper.saveNote(syncedNote.toModel());
-        print('NoteRepository - Note synced with API');
-        return syncedNote;
-      } catch (e) {
-        print('NoteRepository - API sync failed: $e');
-        return newNote.copyWith(isSynced: false);
+      // Verify the note was saved by reading it back
+      final savedNote = HiveHelper.getNoteById(newNote.id!);
+      print('NoteRepository - Note verification - found in Hive: ${savedNote != null}');
+
+      if (savedNote != null) {
+        print('NoteRepository - Saved note title: ${savedNote.title}');
+        print('NoteRepository - Saved note body: ${savedNote.body}');
+      } else {
+        print('NoteRepository - ERROR: Note was not saved to Hive!');
       }
+
+      // Try to sync with API in background (don't await or block on this)
+      _syncNoteToApi(newNote);
+
+      return newNote;
     } catch (e) {
       print('NoteRepository - Error creating note: $e');
       rethrow;
+    }
+  }
+
+  // Background sync method - doesn't block the UI
+  void _syncNoteToApi(NoteEntity note) async {
+    try {
+      final apiNote = ApiNote(
+        title: note.title,
+        body: note.body,
+      );
+
+      await apiClient.createNote(apiNote);
+      print('NoteRepository - Note synced with API in background');
+    } catch (e) {
+      print('NoteRepository - Background API sync failed: $e (this is OK)');
+      // Silently fail - user doesn't need to know about background sync failures
     }
   }
 
@@ -146,47 +120,69 @@ class NoteRepository implements NoteRepositoryInterface {
     try {
       print('NoteRepository - Updating note: ${note.id}');
 
-      final updatedNote = note.copyWith(updatedAt: DateTime.now());
-      await HiveHelper.saveNote(updatedNote.toModel());
+      // Save to local storage immediately
+      await HiveHelper.saveNote(note.toModel());
 
-      // Try to sync with API if note was previously synced
-      if (note.isSynced && note.id != null) {
-        try {
-          await apiClient.updateNote(note.id!, updatedNote.toModel());
-          final syncedNote = updatedNote.copyWith(isSynced: true);
-          await HiveHelper.saveNote(syncedNote.toModel());
-          print('NoteRepository - Note updated on API');
-          return syncedNote;
-        } catch (e) {
-          print('NoteRepository - API update failed: $e');
-          return updatedNote.copyWith(isSynced: false);
-        }
+      // Try to sync with API in background
+      if (note.id != null) {
+        _updateNoteInApi(note);
       }
 
-      return updatedNote;
+      return note;
     } catch (e) {
       print('NoteRepository - Error updating note: $e');
       rethrow;
     }
   }
 
+  void _updateNoteInApi(NoteEntity note) async {
+    try {
+      final apiNote = ApiNote(
+        title: note.title,
+        body: note.body,
+      );
+
+      // Convert string ID to int for API call, use 0 if conversion fails
+      final int? apiId = int.tryParse(note.id!);
+      if (apiId != null) {
+        await apiClient.updateNote(apiId, apiNote);
+        print('NoteRepository - Note updated in API in background');
+      } else {
+        print('NoteRepository - Cannot update in API: Invalid ID format');
+      }
+    } catch (e) {
+      print('NoteRepository - Background API update failed: $e');
+    }
+  }
+
   @override
-  Future<void> deleteNote(int id) async {
+  Future<void> deleteNote(String id) async {
     try {
       print('NoteRepository - Deleting note: $id');
+
+      // Delete from local storage immediately
       await HiveHelper.deleteNote(id);
 
-      // Try to delete from API (but don't fail if API is unavailable)
-      try {
-        await apiClient.deleteNote(id);
-        print('NoteRepository - Note deleted from API');
-      } catch (e) {
-        print('NoteRepository - API deletion failed: $e');
-        // Ignore API deletion errors
-      }
+      // Try to delete from API in background
+      _deleteNoteFromApi(id);
     } catch (e) {
       print('NoteRepository - Error deleting note: $e');
       rethrow;
+    }
+  }
+
+  void _deleteNoteFromApi(String id) async {
+    try {
+      // Convert string ID to int for API call, use 0 if conversion fails
+      final int? apiId = int.tryParse(id);
+      if (apiId != null) {
+        await apiClient.deleteNote(apiId);
+        print('NoteRepository - Note deleted from API in background');
+      } else {
+        print('NoteRepository - Cannot delete from API: Invalid ID format');
+      }
+    } catch (e) {
+      print('NoteRepository - Background API deletion failed: $e');
     }
   }
 }

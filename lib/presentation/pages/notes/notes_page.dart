@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../data/local/hive/hive_helper.dart';
 import 'add_edit_note_page.dart';
 import 'note_detail_page.dart';
 import '../../cubits/note_cubit/note_cubit.dart';
@@ -15,8 +16,6 @@ class NotesPage extends StatefulWidget {
 }
 
 class _NotesPageState extends State<NotesPage> {
-  bool _apiUnavailable = false;
-
   @override
   void initState() {
     super.initState();
@@ -47,9 +46,6 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   void _refreshNotes() {
-    setState(() {
-      _apiUnavailable = false;
-    });
     context.read<NoteCubit>().fetchAllNotes();
   }
 
@@ -57,7 +53,6 @@ class _NotesPageState extends State<NotesPage> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        // Listen for logout and navigate to login page
         if (state is AuthUnauthenticated) {
           Navigator.pushReplacementNamed(context, '/login');
         } else if (state is AuthError) {
@@ -89,31 +84,30 @@ class _NotesPageState extends State<NotesPage> {
           listener: (context, state) {
             if (state is NoteActionSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.green,
+                ),
               );
             } else if (state is NoteError) {
-              // Check if it's an API error
-              if (state.message.contains('403') || state.message.contains('API')) {
-                setState(() {
-                  _apiUnavailable = true;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('API temporarily unavailable. Using local storage.'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
             }
           },
           builder: (context, state) {
+            // Handle NoteActionSuccess by showing the previous loaded state
+            if (state is NoteActionSuccess) {
+              // Try to get the previous loaded state from cubit
+              final cubit = context.read<NoteCubit>();
+              // This is a workaround - we'll refetch to ensure consistency
+              Future.microtask(() => cubit.fetchAllNotes());
+              return const Center(child: CircularProgressIndicator());
+            }
+
             if (state is NoteLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is NoteLoaded) {
@@ -132,6 +126,7 @@ class _NotesPageState extends State<NotesPage> {
                       const Text(
                         'Tap the + button to create your first note',
                         style: TextStyle(color: Colors.grey),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -144,94 +139,44 @@ class _NotesPageState extends State<NotesPage> {
                 );
               }
 
-              return Column(
-                children: [
-                  if (_apiUnavailable)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      color: Colors.orange[100],
-                      child: Row(
-                        children: [
-                          const Icon(Icons.warning, color: Colors.orange, size: 16),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'API unavailable. Working offline with local storage.',
-                              style: TextStyle(fontSize: 12),
-                            ),
+              return RefreshIndicator(
+                onRefresh: () async {
+                  _refreshNotes();
+                },
+                child: ListView.builder(
+                  itemCount: state.notes.length,
+                  itemBuilder: (context, index) {
+                    final note = state.notes[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: ListTile(
+                        title: Text(
+                          note.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          note.body,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            if (note.id != null) {
+                              _deleteNote(note.id!);
+                            }
+                          },
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NoteDetailPage(note: note),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 16),
-                            onPressed: () {
-                              setState(() {
-                                _apiUnavailable = false;
-                              });
-                            },
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        _refreshNotes();
-                      },
-                      child: ListView.builder(
-                        itemCount: state.notes.length,
-                        itemBuilder: (context, index) {
-                          final note = state.notes[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: ListTile(
-                              title: Text(
-                                note.title,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    note.body,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Updated: ${_formatDate(note.updatedAt)}',
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
-                                      if (!note.isSynced) ...[
-                                        const SizedBox(width: 8),
-                                        const Icon(Icons.sync_disabled, size: 12, color: Colors.orange),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  if (note.id != null) {
-                                    _deleteNote(note.id!);
-                                  }
-                                },
-                              ),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NoteDetailPage(note: note),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               );
             } else if (state is NoteError) {
               return Center(
@@ -240,9 +185,9 @@ class _NotesPageState extends State<NotesPage> {
                   children: [
                     const Icon(Icons.error, size: 64, color: Colors.red),
                     const SizedBox(height: 16),
-                    Text(
+                    const Text(
                       'Error loading notes',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -256,41 +201,55 @@ class _NotesPageState extends State<NotesPage> {
                       icon: const Icon(Icons.refresh),
                       label: const Text('Try Again'),
                     ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Force use local storage only
-                        setState(() {
-                          _apiUnavailable = true;
-                        });
-                        context.read<NoteCubit>().fetchAllNotes();
-                      },
-                      icon: const Icon(Icons.storage),
-                      label: const Text('Use Local Storage Only'),
-                    ),
                   ],
                 ),
               );
             }
-            return const Center(child: Text('No notes found.'));
+            return const Center(child: CircularProgressIndicator());
           },
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddEditNotePage()),
-          ),
-          child: const Icon(Icons.add),
+        // Add this to your floatingActionButton in NotesPage:
+        floatingActionButton: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              onPressed: () {
+                // Debug: Print all notes from Hive
+                final notes = HiveHelper.getAllNotes();
+                print('=== DEBUG: All notes in Hive ===');
+                print('Total notes: ${notes.length}');
+                for (var note in notes) {
+                  print('Note: ${note.id} - "${note.title}" - "${note.body}"');
+                }
+                print('=== END DEBUG ===');
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Found ${notes.length} notes in Hive. Check console.'),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              },
+              child: const Icon(Icons.bug_report),
+              heroTag: 'debug',
+              mini: true,
+            ),
+            const SizedBox(height: 10),
+            FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddEditNotePage()),
+              ),
+              child: const Icon(Icons.add),
+              heroTag: 'add',
+            ),
+          ],
         ),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  void _deleteNote(int id) {
+  void _deleteNote(String id) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

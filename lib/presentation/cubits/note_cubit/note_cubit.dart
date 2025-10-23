@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dio/dio.dart';
 import '../../../data/ remote/api/retrofit/api_client.dart';
 import '../../../data/repositories/note_repository.dart';
 import '../../../domain/entities/note_entity.dart';
@@ -9,7 +8,7 @@ class NoteCubit extends Cubit<NoteState> {
   final NoteRepository _noteRepository;
 
   NoteCubit()
-      : _noteRepository = NoteRepository(apiClient: ApiClient(Dio())),
+      : _noteRepository = NoteRepository(apiClient: ApiClient.create()),
         super(NoteInitial());
 
   Future<void> fetchAllNotes() async {
@@ -31,12 +30,22 @@ class NoteCubit extends Cubit<NoteState> {
       final note = NoteEntity(
         title: title,
         body: body,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
       );
-      await _noteRepository.createNote(note);
+      final newNote = await _noteRepository.createNote(note);
+
+      // Get current state and update it
+      if (state is NoteLoaded) {
+        final currentState = state as NoteLoaded;
+        final updatedNotes = [newNote, ...currentState.notes];
+        emit(NoteLoaded(updatedNotes));
+      } else {
+        // If not in loaded state, fetch all notes to refresh
+        await fetchAllNotes();
+      }
+
+      // Show success message without changing the main state
       emit(NoteActionSuccess('Note added successfully.'));
-      fetchAllNotes();
+
     } catch (e) {
       print('NoteCubit - Error adding note: $e');
       emit(NoteError('Failed to add note: $e'));
@@ -46,21 +55,39 @@ class NoteCubit extends Cubit<NoteState> {
   Future<void> updateNote(NoteEntity note) async {
     try {
       print('NoteCubit - Updating note: ${note.id}');
-      await _noteRepository.updateNote(note);
+      final updatedNote = await _noteRepository.updateNote(note);
+
+      // Update UI immediately
+      if (state is NoteLoaded) {
+        final currentState = state as NoteLoaded;
+        final updatedNotes = currentState.notes.map((n) => n.id == updatedNote.id ? updatedNote : n).toList();
+        emit(NoteLoaded(updatedNotes));
+      } else {
+        await fetchAllNotes();
+      }
+
       emit(NoteActionSuccess('Note updated successfully.'));
-      fetchAllNotes();
     } catch (e) {
       print('NoteCubit - Error updating note: $e');
       emit(NoteError('Failed to update note: $e'));
     }
   }
 
-  Future<void> deleteNote(int id) async {
+  Future<void> deleteNote(String id) async {
     try {
       print('NoteCubit - Deleting note: $id');
       await _noteRepository.deleteNote(id);
+
+      // Update UI immediately
+      if (state is NoteLoaded) {
+        final currentState = state as NoteLoaded;
+        final updatedNotes = currentState.notes.where((n) => n.id != id).toList();
+        emit(NoteLoaded(updatedNotes));
+      } else {
+        await fetchAllNotes();
+      }
+
       emit(NoteActionSuccess('Note deleted successfully.'));
-      fetchAllNotes();
     } catch (e) {
       print('NoteCubit - Error deleting note: $e');
       emit(NoteError('Failed to delete note: $e'));

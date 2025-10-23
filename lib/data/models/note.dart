@@ -8,7 +8,7 @@ part 'note.g.dart';
 @JsonSerializable()
 class Note extends Equatable {
   @HiveField(0)
-  final int? id;
+  final String? id;  // Changed from int? to String?
 
   @HiveField(1)
   final String title;
@@ -16,22 +16,10 @@ class Note extends Equatable {
   @HiveField(2)
   final String body;
 
-  @HiveField(3)
-  final DateTime createdAt;
-
-  @HiveField(4)
-  final DateTime updatedAt;
-
-  @HiveField(5)
-  final bool isSynced;
-
   const Note({
     this.id,
     required this.title,
     required this.body,
-    required this.createdAt,
-    required this.updatedAt,
-    this.isSynced = false,
   });
 
   factory Note.fromJson(Map<String, dynamic> json) => _$NoteFromJson(json);
@@ -39,23 +27,17 @@ class Note extends Equatable {
   Map<String, dynamic> toJson() => _$NoteToJson(this);
 
   Note copyWith({
-    int? id,
+    String? id,
     String? title,
     String? body,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    bool? isSynced,
   }) {
     return Note(
       id: id ?? this.id,
       title: title ?? this.title,
       body: body ?? this.body,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      isSynced: isSynced ?? this.isSynced,
     );
   }
 
   @override
-  List<Object?> get props => [id, title, body, createdAt, updatedAt, isSynced];
+  List<Object?> get props => [id, title, body];
 }

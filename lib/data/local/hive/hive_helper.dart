@@ -30,19 +30,24 @@ class HiveHelper {
   }
 
   static List<Note> getAllNotes() {
-    return notesBoxInstance.values.toList();
+    final notes = notesBoxInstance.values.toList();
+
+    // Sort by ID in descending order (newest first)
+    notes.sort((a, b) {
+      final aId = int.tryParse(a.id ?? '0') ?? 0;
+      final bId = int.tryParse(b.id ?? '0') ?? 0;
+      return bId.compareTo(aId); // Descending order (newest first)
+    });
+
+    return notes;
   }
 
-  static Note? getNoteById(int id) {
+  static Note? getNoteById(String id) {
     return notesBoxInstance.get(id);
   }
 
-  static Future<void> deleteNote(int id) async {
+  static Future<void> deleteNote(String id) async {
     await notesBoxInstance.delete(id);
-  }
-
-  static Future<void> clearAllNotes() async {
-    await notesBoxInstance.clear();
   }
 
   // App data operations

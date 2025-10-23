@@ -14,7 +14,7 @@ class _ApiClient implements ApiClient {
     this.baseUrl,
     this.errorLogger,
   }) {
-    baseUrl ??= 'https://jsonplaceholder.typicode.com/';
+    baseUrl ??= 'https://jsonplaceholder.typicode.com';
   }
 
   final Dio _dio;
@@ -24,19 +24,19 @@ class _ApiClient implements ApiClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<Note>> getNotes() async {
+  Future<List<ApiNote>> getNotes() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<Note>>(Options(
+    final _options = _setStreamType<List<ApiNote>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          'posts',
+          '/posts',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -46,10 +46,10 @@ class _ApiClient implements ApiClient {
           baseUrl,
         )));
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<Note> _value;
+    late List<ApiNote> _value;
     try {
       _value = _result.data!
-          .map((dynamic i) => Note.fromJson(i as Map<String, dynamic>))
+          .map((dynamic i) => ApiNote.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -59,19 +59,19 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<Note> getNoteById(int id) async {
+  Future<ApiNote> getNoteById(int id) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<Note>(Options(
+    final _options = _setStreamType<ApiNote>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          'posts/${id}',
+          '/posts/${id}',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -81,9 +81,9 @@ class _ApiClient implements ApiClient {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Note _value;
+    late ApiNote _value;
     try {
-      _value = Note.fromJson(_result.data!);
+      _value = ApiNote.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -92,20 +92,20 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<Note> createNote(Note note) async {
+  Future<ApiNote> createNote(ApiNote note) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(note.toJson());
-    final _options = _setStreamType<Note>(Options(
+    final _options = _setStreamType<ApiNote>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          'posts',
+          '/posts',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -115,9 +115,9 @@ class _ApiClient implements ApiClient {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Note _value;
+    late ApiNote _value;
     try {
-      _value = Note.fromJson(_result.data!);
+      _value = ApiNote.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -126,23 +126,23 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<Note> updateNote(
+  Future<ApiNote> updateNote(
     int id,
-    Note note,
+    ApiNote note,
   ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(note.toJson());
-    final _options = _setStreamType<Note>(Options(
+    final _options = _setStreamType<ApiNote>(Options(
       method: 'PUT',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          'posts/${id}',
+          '/posts/${id}',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -152,9 +152,9 @@ class _ApiClient implements ApiClient {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Note _value;
+    late ApiNote _value;
     try {
-      _value = Note.fromJson(_result.data!);
+      _value = ApiNote.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -175,7 +175,7 @@ class _ApiClient implements ApiClient {
     )
         .compose(
           _dio.options,
-          'posts/${id}',
+          '/posts/${id}',
           queryParameters: queryParameters,
           data: _data,
         )

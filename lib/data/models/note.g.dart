@@ -17,31 +17,22 @@ class NoteAdapter extends TypeAdapter<Note> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Note(
-      id: fields[0] as int?,
+      id: fields[0] as String?,
       title: fields[1] as String,
       body: fields[2] as String,
-      createdAt: fields[3] as DateTime,
-      updatedAt: fields[4] as DateTime,
-      isSynced: fields[5] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.title)
       ..writeByte(2)
-      ..write(obj.body)
-      ..writeByte(3)
-      ..write(obj.createdAt)
-      ..writeByte(4)
-      ..write(obj.updatedAt)
-      ..writeByte(5)
-      ..write(obj.isSynced);
+      ..write(obj.body);
   }
 
   @override
@@ -60,19 +51,13 @@ class NoteAdapter extends TypeAdapter<Note> {
 // **************************************************************************
 
 Note _$NoteFromJson(Map<String, dynamic> json) => Note(
-      id: (json['id'] as num?)?.toInt(),
+      id: json['id'] as String?,
       title: json['title'] as String,
       body: json['body'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      isSynced: json['isSynced'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$NoteToJson(Note instance) => <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
       'body': instance.body,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
-      'isSynced': instance.isSynced,
     };
