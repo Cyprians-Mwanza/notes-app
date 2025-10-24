@@ -11,11 +11,9 @@ class HiveHelper {
 
     // Open boxes
     await Hive.openBox<Note>(AppConstants.hiveNotesBox);
-    await Hive.openBox(AppConstants.hiveAppBox);
   }
 
   static Box<Note> get notesBoxInstance => Hive.box<Note>(AppConstants.hiveNotesBox);
-  static Box get appBoxInstance => Hive.box(AppConstants.hiveAppBox);
 
   // Note operations
   static Future<void> saveNote(Note note) async {
@@ -51,17 +49,9 @@ class HiveHelper {
   }
 
   // App data operations
-  static Future<void> setLastSyncTime(DateTime time) async {
-    await appBoxInstance.put('last_sync', time.toIso8601String());
-  }
 
-  static DateTime? getLastSyncTime() {
-    final String? timeString = appBoxInstance.get('last_sync');
-    return timeString != null ? DateTime.parse(timeString) : null;
-  }
 
   static Future<void> clearAllData() async {
     await notesBoxInstance.clear();
-    await appBoxInstance.clear();
   }
 }
