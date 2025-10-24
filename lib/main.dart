@@ -6,6 +6,7 @@ import 'package:notes_app/presentation/pages/auth/login_page.dart';
 import 'package:notes_app/presentation/pages/notes/notes_page.dart';
 import 'package:notes_app/presentation/pages/splash_page.dart';
 
+import 'core/constants/app_constants.dart';
 import 'data/local/hive/hive_helper.dart';
 import 'data/local/shared_prefs/shared_prefs_helper.dart';
 
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => NoteCubit()),
       ],
       child: MaterialApp(
-        title: 'Improved Notes App',
+        title: AppConstants.appName,
         theme: ThemeData(
           primarySwatch: Colors.blue,
           useMaterial3: true,
