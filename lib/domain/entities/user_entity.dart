@@ -14,24 +14,6 @@ class UserEntity extends Equatable {
     required this.token,
   });
 
-  // factory UserEntity.fromModel(model.User user) {
-  //   return UserEntity(
-  //     id: user.id,
-  //     email: user.email,
-  //     name: user.name,
-  //     token: user.token,
-  //   );
-  // }
-
-  // model.User toModel() {
-  //   return model.User(
-  //     id: id,
-  //     email: email,
-  //     name: name,
-  //     token: token,
-  //   );
-  // }
-
   @override
   List<Object> get props => [id, email, name, token];
 }
