@@ -33,17 +33,14 @@ class NoteCubit extends Cubit<NoteState> {
       );
       final newNote = await _noteRepository.createNote(note);
 
-      // Get current state and update it
       if (state is NoteLoaded) {
         final currentState = state as NoteLoaded;
         final updatedNotes = [newNote, ...currentState.notes];
         emit(NoteLoaded(updatedNotes));
       } else {
-        // If not in loaded state, fetch all notes to refresh
         await fetchAllNotes();
       }
 
-      // Show success message without changing the main state
       emit(NoteActionSuccess('Note added successfully.'));
 
     } catch (e) {
@@ -57,7 +54,6 @@ class NoteCubit extends Cubit<NoteState> {
       print('NoteCubit - Updating note: ${note.id}');
       final updatedNote = await _noteRepository.updateNote(note);
 
-      // Update UI immediately
       if (state is NoteLoaded) {
         final currentState = state as NoteLoaded;
         final updatedNotes = currentState.notes.map((n) => n.id == updatedNote.id ? updatedNote : n).toList();
@@ -78,7 +74,6 @@ class NoteCubit extends Cubit<NoteState> {
       print('NoteCubit - Deleting note: $id');
       await _noteRepository.deleteNote(id);
 
-      // Update UI immediately
       if (state is NoteLoaded) {
         final currentState = state as NoteLoaded;
         final updatedNotes = currentState.notes.where((n) => n.id != id).toList();

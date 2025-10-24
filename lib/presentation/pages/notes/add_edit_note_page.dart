@@ -26,13 +26,11 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
   void _saveNote() {
     if (_formKey.currentState!.validate()) {
       if (widget.note == null) {
-        // Add new note
         context.read<NoteCubit>().addNote(
           _titleController.text,
           _bodyController.text,
         );
       } else {
-        // Update existing note
         final updatedNote = widget.note!.copyWith(
           title: _titleController.text,
           body: _bodyController.text,

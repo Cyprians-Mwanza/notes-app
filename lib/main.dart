@@ -13,10 +13,8 @@ import 'data/local/shared_prefs/shared_prefs_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive
   await HiveHelper.init();
 
-  // Initialize SharedPreferences
   await SharedPrefsHelper.init();
 
   runApp(const MyApp());

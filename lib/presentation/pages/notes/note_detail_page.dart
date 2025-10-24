@@ -29,14 +29,11 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         builder: (_) => AddEditNotePage(note: _currentNote),
       ),
     ).then((result) {
-      // This callback runs when we return from the edit page
       if (result != null && result is NoteEntity) {
-        // Update with the edited note
         setState(() {
           _currentNote = result;
         });
       } else {
-        // Refresh from the cubit state to get the latest data
         _refreshNoteFromCubit();
       }
     });
@@ -62,7 +59,6 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
     return BlocListener<NoteCubit, NoteState>(
       listener: (context, state) {
         if (state is NoteLoaded) {
-          // When notes are loaded/updated, refresh our current note
           final updatedNote = state.notes.firstWhere(
                 (n) => n.id == _currentNote.id,
             orElse: () => _currentNote,

@@ -99,11 +99,8 @@ class _NotesPageState extends State<NotesPage> {
             }
           },
           builder: (context, state) {
-            // Handle NoteActionSuccess by showing the previous loaded state
             if (state is NoteActionSuccess) {
-              // Try to get the previous loaded state from cubit
               final cubit = context.read<NoteCubit>();
-              // This is a workaround - we'll refetch to ensure consistency
               Future.microtask(() => cubit.fetchAllNotes());
               return const Center(child: CircularProgressIndicator());
             }
@@ -208,13 +205,11 @@ class _NotesPageState extends State<NotesPage> {
             return const Center(child: CircularProgressIndicator());
           },
         ),
-        // Add this to your floatingActionButton in NotesPage:
         floatingActionButton: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             FloatingActionButton(
               onPressed: () {
-                // Debug: Print all notes from Hive
                 final notes = HiveHelper.getAllNotes();
                 print('=== DEBUG: All notes in Hive ===');
                 print('Total notes: ${notes.length}');
