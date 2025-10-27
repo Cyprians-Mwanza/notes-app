@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../data/local/hive/hive_helper.dart';
 import 'add_edit_note_page.dart';
 import 'note_detail_page.dart';
 import '../../cubits/note_cubit/note_cubit.dart';
@@ -49,6 +48,29 @@ class _NotesPageState extends State<NotesPage> {
     context.read<NoteCubit>().fetchAllNotes();
   }
 
+  void _deleteNote(String id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Note'),
+        content: const Text('Are you sure you want to delete this note?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<NoteCubit>().deleteNote(id);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
@@ -89,6 +111,7 @@ class _NotesPageState extends State<NotesPage> {
                   backgroundColor: Colors.green,
                 ),
               );
+              context.read<NoteCubit>().fetchAllNotes();
             } else if (state is NoteError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -99,12 +122,6 @@ class _NotesPageState extends State<NotesPage> {
             }
           },
           builder: (context, state) {
-            if (state is NoteActionSuccess) {
-              final cubit = context.read<NoteCubit>();
-              Future.microtask(() => cubit.fetchAllNotes());
-              return const Center(child: CircularProgressIndicator());
-            }
-
             if (state is NoteLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is NoteLoaded) {
@@ -115,10 +132,8 @@ class _NotesPageState extends State<NotesPage> {
                     children: [
                       const Icon(Icons.note_add, size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      const Text(
-                        'No notes yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
+                      const Text('No notes yet',
+                          style: TextStyle(fontSize: 18, color: Colors.grey)),
                       const SizedBox(height: 8),
                       const Text(
                         'Tap the + button to create your first note',
@@ -137,15 +152,14 @@ class _NotesPageState extends State<NotesPage> {
               }
 
               return RefreshIndicator(
-                onRefresh: () async {
-                  _refreshNotes();
-                },
+                onRefresh: () async => _refreshNotes(),
                 child: ListView.builder(
                   itemCount: state.notes.length,
                   itemBuilder: (context, index) {
                     final note = state.notes[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       child: ListTile(
                         title: Text(
                           note.title,
@@ -159,9 +173,7 @@ class _NotesPageState extends State<NotesPage> {
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            if (note.id != null) {
-                              _deleteNote(note.id!);
-                            }
+                            if (note.id != null) _deleteNote(note.id!);
                           },
                         ),
                         onTap: () => Navigator.push(
@@ -184,7 +196,8 @@ class _NotesPageState extends State<NotesPage> {
                     const SizedBox(height: 16),
                     const Text(
                       'Error loading notes',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -202,67 +215,17 @@ class _NotesPageState extends State<NotesPage> {
                 ),
               );
             }
+
             return const Center(child: CircularProgressIndicator());
           },
         ),
-        floatingActionButton: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            FloatingActionButton(
-              onPressed: () {
-                final notes = HiveHelper.getAllNotes();
-                print('=== DEBUG: All notes in Hive ===');
-                print('Total notes: ${notes.length}');
-                for (var note in notes) {
-                  print('Note: ${note.id} - "${note.title}" - "${note.body}"');
-                }
-                print('=== END DEBUG ===');
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Found ${notes.length} notes in Hive. Check console.'),
-                    backgroundColor: Colors.blue,
-                  ),
-                );
-              },
-              child: const Icon(Icons.bug_report),
-              heroTag: 'debug',
-              mini: true,
-            ),
-            const SizedBox(height: 10),
-            FloatingActionButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddEditNotePage()),
-              ),
-              child: const Icon(Icons.add),
-              heroTag: 'add',
-            ),
-          ],
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddEditNotePage()),
+          ),
+          child: const Icon(Icons.add),
         ),
-      ),
-    );
-  }
-
-  void _deleteNote(String id) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<NoteCubit>().deleteNote(id);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
       ),
     );
   }
