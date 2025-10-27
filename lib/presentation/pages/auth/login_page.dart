@@ -38,7 +38,6 @@ class _LoginPageState extends State<LoginPage> {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          // Show success snackbar
           if (!_showSuccessSnackbar) {
             _showSuccessSnackbar = true;
             ScaffoldMessenger.of(context).showSnackBar(
@@ -65,7 +64,6 @@ class _LoginPageState extends State<LoginPage> {
             );
           }
 
-          // Navigate to NotesPage after a short delay to show the snackbar
           Future.delayed(const Duration(milliseconds: 2000), () {
             Navigator.pushReplacement(
               context,

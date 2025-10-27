@@ -1,34 +1,33 @@
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/user_entity.dart';
 
-// AuthState - defines all possible authentication states in the app using Equatable for value equality
 abstract class AuthState extends Equatable {
   const AuthState();
 
   @override
-  List<Object?> get props => []; // Equatable requirement for value-based equality
+  List<Object?> get props => [];
 }
 
-class AuthInitial extends AuthState {} // Initial state before any authentication check
+class AuthInitial extends AuthState {}
 
-class AuthLoading extends AuthState {} // Loading state during authentication operations
+class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
-  final UserEntity user; // Contains the authenticated user data
+  final UserEntity user;
 
   const AuthAuthenticated(this.user);
 
   @override
-  List<Object?> get props => [user]; // Equality based on user object
+  List<Object?> get props => [user];
 }
 
-class AuthUnauthenticated extends AuthState {} // User is not logged in
+class AuthUnauthenticated extends AuthState {}
 
 class AuthError extends AuthState {
-  final String message; // Error message to display to user
+  final String message;
 
   const AuthError(this.message);
 
   @override
-  List<Object?> get props => [message]; // Equality based on error message
+  List<Object?> get props => [message];
 }

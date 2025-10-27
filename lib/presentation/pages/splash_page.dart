@@ -12,16 +12,12 @@ class SplashPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
-        print('SplashPage - Auth State: $state');
-
         if (state is AuthAuthenticated) {
-          print('Navigating to NotesPage');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const NotesPage()),
           );
         } else if (state is AuthUnauthenticated) {
-          print('Navigating to LoginPage');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const LoginPage()),

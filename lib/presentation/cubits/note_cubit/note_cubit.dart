@@ -4,7 +4,6 @@ import '../../../data/repositories/note_repository.dart';
 import '../../../domain/entities/note_entity.dart';
 import 'note_state.dart';
 
-// NoteCubit - handles note CRUD logic and state management
 class NoteCubit extends Cubit<NoteState> {
   final NoteRepository _noteRepository;
 
@@ -12,7 +11,6 @@ class NoteCubit extends Cubit<NoteState> {
       : _noteRepository = NoteRepository(apiClient: ApiClient.create()),
         super(NoteInitial());
 
-  // Fetch all notes
   Future<void> fetchAllNotes() async {
     emit(NoteLoading());
     try {
@@ -23,7 +21,6 @@ class NoteCubit extends Cubit<NoteState> {
     }
   }
 
-  // Add a new note
   Future<void> addNote(String title, String body) async {
     try {
       final note = NoteEntity(title: title, body: body);
@@ -34,7 +31,6 @@ class NoteCubit extends Cubit<NoteState> {
     }
   }
 
-  // Update an existing note
   Future<void> updateNote(NoteEntity note) async {
     try {
       await _noteRepository.updateNote(note);
@@ -44,7 +40,6 @@ class NoteCubit extends Cubit<NoteState> {
     }
   }
 
-  // Delete a note
   Future<void> deleteNote(String id) async {
     try {
       await _noteRepository.deleteNote(id);
