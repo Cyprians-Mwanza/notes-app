@@ -67,7 +67,7 @@ class AuthRepository implements AuthRepositoryInterface {
         token: SharedPrefsHelper.token!,
       );
       return user;
-    };
+    }
     return null;
   }
 }
