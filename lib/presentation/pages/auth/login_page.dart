@@ -96,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Login to Notes')),
+        appBar: null,
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -177,9 +177,14 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: _login,
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
+                        backgroundColor: Colors.blue,
                       ),
-                      child: const Text('Login to Notes'),
+                      child: const Text(
+                        'Login to Notes',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     );
+
                   },
                 ),
                 const SizedBox(height: 16),
