@@ -22,11 +22,11 @@ class SharedPrefsHelper {
   }
 
   static Future<void> clearUserData() async {
-    await _prefs.remove(AppConstants.tokenKey);
-    await _prefs.remove(AppConstants.userIdKey);
-    await _prefs.remove(AppConstants.userEmailKey);
-    await _prefs.remove(AppConstants.userNameKey);
-    await _prefs.setBool(AppConstants.isLoggedInKey, false);
+    // await _prefs.remove(AppConstants.tokenKey);
+    // await _prefs.remove(AppConstants.userIdKey);
+    // await _prefs.remove(AppConstants.userEmailKey);
+    await _prefs.clear();
+    // await _prefs.setBool(AppConstants.isLoggedInKey, false);
   }
 
   static String? get token => _prefs.getString(AppConstants.tokenKey);

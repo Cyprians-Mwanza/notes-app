@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../ remote/api/retrofit/api_client.dart';
 import '../ remote/models/api_note.dart';
 import '../../domain/entities/note_entity.dart';
@@ -73,11 +75,13 @@ class NoteRepository implements NoteRepositoryInterface {
         title: note.title,
         body: note.body,
       );
-
       await apiClient.createNote(apiNote);
     } catch (e) {
+      debugPrint('Error syncing note: $e');
     }
   }
+
+
 
   @override
   Future<NoteEntity> updateNote(NoteEntity note) async {
@@ -103,17 +107,20 @@ class NoteRepository implements NoteRepositoryInterface {
 
       final int? apiId = int.tryParse(note.id!);
       if (apiId != null) {
-        await apiClient.updateNote(apiId, apiNote);;
+        await apiClient.updateNote(apiId, apiNote);
       } else {
+        debugPrint(' Could not update note: Invalid API ID (${note.id})');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('Failed to update note in API: $e');
+      debugPrint('Stack trace: $stack');
     }
   }
 
+
   @override
   Future<void> deleteNote(String id) async {
-    try {;
-
+    try {
       await HiveHelper.deleteNote(id);
 
       _deleteNoteFromApi(id);
@@ -128,8 +135,12 @@ class NoteRepository implements NoteRepositoryInterface {
       if (apiId != null) {
         await apiClient.deleteNote(apiId);
       } else {
+        debugPrint('Could not delete note: Invalid API ID ($id)');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('Failed to delete note from API: $e');
+      debugPrint('Stack trace: $stack');
     }
   }
+
 }

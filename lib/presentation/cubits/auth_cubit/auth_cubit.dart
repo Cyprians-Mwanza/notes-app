@@ -7,9 +7,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit()
       : _authRepository = AuthRepository(),
-        super(AuthInitial()) {
-    checkAuthStatus();
-  }
+        super(AuthInitial());
 
   Future<void> checkAuthStatus() async {
     emit(AuthLoading());

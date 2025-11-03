@@ -5,15 +5,25 @@ import 'notes/notes_page.dart';
 import '../cubits/auth_cubit/auth_cubit.dart';
 import '../cubits/auth_cubit/auth_state.dart';
 
-class SplashPage extends StatelessWidget {
+class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
+
+  @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => context.read<AuthCubit>().checkAuthStatus());
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is AuthAuthenticated)
-        {
+        if (state is AuthAuthenticated) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const NotesPage()),
